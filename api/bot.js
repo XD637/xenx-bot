@@ -3,7 +3,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const fs = require('fs');
 const path = require('path');
 
-// Load the tweets from the JSON file
+// Load tweets from JSON file
 const tweets = JSON.parse(fs.readFileSync(path.join(__dirname, 'xennium_tweets.json'), 'utf8'));
 
 console.log('Tweets loaded:', tweets.length);
@@ -18,26 +18,34 @@ const client = new TwitterApi({
 
 console.log('Twitter client is set up.');
 
-const postTweet = async (tweet) => {
+let lastTweet = "";
+
+// Function to pick a random tweet (avoiding duplicates)
+const getRandomTweet = () => {
+  let randomTweet;
+  do {
+    randomTweet = tweets[Math.floor(Math.random() * tweets.length)];
+  } while (randomTweet === lastTweet); // Avoid repeating the last tweet
+  lastTweet = randomTweet;
+  return randomTweet;
+};
+
+// Function to post a tweet
+const postTweet = async () => {
+  const tweet = getRandomTweet();
   try {
     console.log(`Posting tweet: ${tweet}`);
-    // Use v2 API to post tweet
     const response = await client.v2.tweet(tweet);
-    console.log(`Tweet posted successfully: ${response.data}`);
+    console.log(`✅ Tweet posted successfully: ${response.data.id}`);
   } catch (error) {
-    console.error(`Error posting tweet: ${error}`);
+    console.error(`❌ Error posting tweet: ${error}`);
   }
 };
 
-// Test posting a tweet immediately
+// Post an immediate test tweet
 console.log('Posting an immediate test tweet...');
-postTweet(tweets[0]);
+postTweet();
 
-// Post tweets every 5 hours
-let tweetIndex = 0;
+// Schedule tweets every 5 hours
 console.log('Starting tweet loop...');
-setInterval(() => {
-  console.log(`Interval triggered. Posting tweet #${tweetIndex + 1}`);
-  postTweet(tweets[tweetIndex]);
-  tweetIndex = (tweetIndex + 1) % tweets.length; // Loop back to the first tweet after posting all
-}, 5 * 60 * 60 * 1000); // Wait for 5 hours (in milliseconds)
+setInterval(postTweet, 5 * 60 * 60 * 1000); // 5 hours in milliseconds
