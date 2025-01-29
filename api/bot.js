@@ -2,6 +2,7 @@ require('dotenv').config();
 const { TwitterApi } = require('twitter-api-v2');
 const fs = require('fs');
 const path = require('path');
+const express = require('express');
 
 // Load tweets from JSON file
 const tweets = JSON.parse(fs.readFileSync(path.join(__dirname, 'xennium_tweets.json'), 'utf8'));
@@ -49,3 +50,15 @@ postTweet();
 // Schedule tweets every 5 hours
 console.log('Starting tweet loop...');
 setInterval(postTweet, 5 * 60 * 60 * 1000); // 5 hours in milliseconds
+
+// Set up Express server to keep the app alive
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Xennium Twitter bot is running.');
+});
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Express server running on port ${PORT}`);
+});
