@@ -1,31 +1,43 @@
 require('dotenv').config();
 const { TwitterApi } = require('twitter-api-v2');
+const fs = require('fs');
+const path = require('path');
 
-module.exports = async (req, res) => {
+// Load the tweets from the JSON file
+const tweets = JSON.parse(fs.readFileSync(path.join(__dirname, 'xennium_tweets.json'), 'utf8'));
+
+console.log('Tweets loaded:', tweets.length);
+
+// Set up Twitter API client using v2
+const client = new TwitterApi({
+  appKey: process.env.TWITTER_API_KEY,
+  appSecret: process.env.TWITTER_API_SECRET,
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+});
+
+console.log('Twitter client is set up.');
+
+const postTweet = async (tweet) => {
   try {
-    // Check if the request method is POST (optional)
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method Not Allowed' });
-    }
-
-    // Twitter API client
-    const client = new TwitterApi({
-      appKey: process.env.TWITTER_API_KEY,
-      appSecret: process.env.TWITTER_API_SECRET,
-      accessToken: process.env.TWITTER_ACCESS_TOKEN,
-      accessSecret: process.env.TWITTER_ACCESS_SECRET,
-    });
-
-    // Sample tweet
-    const tweetText = "Automated tweet from Xennium Bot! #Xennium #Blockchain";
-    
-    // Post the tweet
-    const response = await client.v2.tweet(tweetText);
-    
-    // Return success response
-    return res.status(200).json({ success: true, tweet: response.data });
+    console.log(`Posting tweet: ${tweet}`);
+    // Use v2 API to post tweet
+    const response = await client.v2.tweet(tweet);
+    console.log(`Tweet posted successfully: ${response.data}`);
   } catch (error) {
-    console.error("Error posting tweet:", error);
-    return res.status(500).json({ error: error.message });
+    console.error(`Error posting tweet: ${error}`);
   }
 };
+
+// Test posting a tweet immediately
+console.log('Posting an immediate test tweet...');
+postTweet(tweets[0]);
+
+// Post tweets every 5 hours
+let tweetIndex = 0;
+console.log('Starting tweet loop...');
+setInterval(() => {
+  console.log(`Interval triggered. Posting tweet #${tweetIndex + 1}`);
+  postTweet(tweets[tweetIndex]);
+  tweetIndex = (tweetIndex + 1) % tweets.length; // Loop back to the first tweet after posting all
+}, 5 * 60 * 60 * 1000); // Wait for 5 hours (in milliseconds)
