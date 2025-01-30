@@ -8,6 +8,9 @@ on:
 jobs:
   tweet:
     runs-on: ubuntu-latest
+    concurrency:
+      group: tweet
+      cancel-in-progress: true  # Cancels previous jobs if another starts
 
     steps:
       - name: Checkout repository
@@ -28,3 +31,5 @@ jobs:
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
         run: node bot.js
+        timeout-minutes: 2  # Prevent long executions
+        continue-on-error: false  # Ensure script stops on errors
